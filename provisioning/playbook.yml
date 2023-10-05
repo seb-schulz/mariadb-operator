@@ -1,0 +1,68 @@
+---
+- hosts: default
+  vars:
+    k0s_controller_cluster_name: k0s
+    k0s_controller_config: /etc/k0s/k0s.yaml
+    k0s_controller_api_address: "{{ ansible_default_ipv4.address }}"
+    k0s_controller_api_sans:
+      - "{{ k0s_controller_api_address }}"
+      - 127.0.0.1
+  handlers:
+    - name: "Restarted k0s controller service"
+      include_tasks: handlers/restart_k0s.yaml
+  tasks:
+    - name: Install basic packages
+      become: true
+      ansible.builtin.package:
+        name:
+          - htop
+          - golang
+          - curl
+    - name: Download k0s installer
+      get_url:
+        url: https://get.k0s.sh
+        dest: /tmp/k0s.sh
+        mode: 0755
+      when: "'/usr/local/bin/k0s' is not ansible.builtin.exists "
+    - name: Execute the k0s.sh
+      become: true
+      shell:
+        cmd: sh /tmp/k0s.sh
+        creates: /usr/local/bin/k0s
+    - name: Remove the k0s.sh
+      file:
+        path: /tmp/k0s.sh
+        state: absent
+    - name: "Ensure k0s config directory"
+      become: true
+      ansible.builtin.file:
+        path: "{{ k0s_controller_config | dirname }}"
+        state: directory
+    - name: "Generate config file to {{ k0s_controller_config }}"
+      become: true
+      ansible.builtin.template:
+        dest: "{{ k0s_controller_config }}"
+        src: k0s.yaml.j2
+        mode: "u+rw"
+        backup: true
+        validate: "/usr/local/bin/k0s config validate -c %s"
+      notify: "Restarted k0s controller service"
+    - name: Setup k0s service
+      become: true
+      command:
+        cmd: /usr/local/bin/k0s install controller --enable-worker --no-taints
+        creates: /etc/systemd/system/k0scontroller.service
+    - ansible.builtin.meta: flush_handlers
+    - name: Get kubeconfig admin
+      block:
+        - name: Fetch from controller
+          become: true
+          ansible.builtin.slurp:
+            src: /var/lib/k0s/pki/admin.conf
+          register: k0s_controller_kubeconfig
+        - name: "Generate kubeconfig file"
+          template:
+            dest: /vagrant/kubeconf.conf
+            src: kubeconf.conf.j2
+          vars:
+            k0s_controller_kubeconfig_content: "{{ k0s_controller_kubeconfig.content | b64decode | from_yaml }}"

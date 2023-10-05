@@ -1,0 +1,12 @@
+- name: "Restarted k0s controller service"
+  become: true
+  systemd:
+    name: "k0scontroller.service"
+    state: restarted
+    enabled: true
+- name: Wait for k0s apiserver
+  wait_for:
+    host: localhost
+    port: 6443
+    delay: 15
+    timeout: 180

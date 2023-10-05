@@ -1,0 +1,16 @@
+# {{ ansible_managed }}
+apiVersion: k0s.k0sproject.io/v1beta1
+kind: Cluster
+metadata:
+  name: {{ k0s_controller_cluster_name }}
+spec:
+  api:
+    address: {{ k0s_controller_api_address }}
+    sans:
+{{ k0s_controller_api_sans | to_nice_yaml(indent=2) | indent(6, first=True) }}
+  network:
+    provider: kuberouter
+  storage:
+    type: kine
+  telemetry:
+    enabled: false

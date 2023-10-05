@@ -1,0 +1,19 @@
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: {{ k0s_controller_kubeconfig_content['clusters'][0]['cluster']['certificate-authority-data'] }}
+    server: https://{{ k0s_controller_api_address }}:6443
+  name: {{ k0s_controller_cluster_name }}
+contexts:
+- context:
+    cluster: {{ k0s_controller_cluster_name }}
+    namespace: default
+    user: admin
+  name: {{ k0s_controller_cluster_name }}
+current-context: {{ k0s_controller_cluster_name }}
+kind: Config
+preferences: {}
+users:
+- name: admin
+  user:
+{{ k0s_controller_kubeconfig_content['users'][0]['user'] | to_nice_yaml(indent=2) | indent(4, first=True) }}
