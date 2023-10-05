@@ -11,6 +11,26 @@
     - name: "Restarted k0s controller service"
       include_tasks: handlers/restart_k0s.yaml
   tasks:
+    - name: Add helm apt key to keyring
+      become: true
+      ansible.builtin.get_url:
+        url: https://baltocdn.com/helm/signing.asc
+        dest: /usr/share/keyrings/helm.asc
+    - name: Add k8s key to keyring
+      become: true
+      ansible.builtin.get_url:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        dest: /etc/apt/trusted.gpg.d/kubernetes-archive-keyring.asc
+    - name: Add helm repo to apt
+      become: true
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/helm.asc] https://baltocdn.com/helm/stable/debian/ all main"
+        state: present
+    - name: Add k8s repo to apt
+      become: true
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-archive-keyring.asc] https://apt.kubernetes.io/ kubernetes-xenial main"
+        state: present
     - name: Install basic packages
       become: true
       ansible.builtin.package:
@@ -18,6 +38,10 @@
           - htop
           - golang
           - curl
+          - buildah
+          - make
+          - helm
+          - kubectl
     - name: Download k0s installer
       get_url:
         url: https://get.k0s.sh
@@ -64,5 +88,11 @@
           template:
             dest: /vagrant/kubeconf.conf
             src: kubeconf.conf.j2
+            mode: "u=rw,g=,o="
           vars:
             k0s_controller_kubeconfig_content: "{{ k0s_controller_kubeconfig.content | b64decode | from_yaml }}"
+        - name: "Store .kube/config file"
+          ansible.builtin.copy:
+            dest: /home/vagrant/.kube/config
+            content: "{{ k0s_controller_kubeconfig.content | b64decode | from_yaml }}"
+            mode: "u=rw,g=,o="
