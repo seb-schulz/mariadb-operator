@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "mariadb.persistentVolumeClaimName" . }}
+  labels:
+    {{- include "mariadb.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- with .Values.persistentVolumeClaim.resources }}
+  resources:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.persistentVolumeClaim.storageClassName }}
+  storageClassName: {{ . }}
+  {{- end }}
+  {{- with .Values.persistentVolumeClaim.volumeMode }}
+  volumeMode: {{ . }}
+  {{- end }}
+  {{- with .Values.persistentVolumeClaim.volumeName }}
+  volumeName: {{ . }}
+  {{- end }}

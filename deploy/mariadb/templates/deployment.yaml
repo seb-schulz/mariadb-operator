@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mariadb.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "mariadb.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "mariadb.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "mariadb.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "mariadb.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      {{- $appVersion := .Chart.AppVersion -}}
+      {{- with .Values.operator }}
+        - name: operator
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          image: {{ include "mariadb.image" (list . $appVersion) | quote }}
+          imagePullPolicy: {{ .image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ include "mariadb.secretName" $ }}
+          resources:
+            {{- toYaml .resources | nindent 12 }}
+      {{- end }}
+      {{- $servicePort := .Values.service.port -}}
+      {{- with .Values.database }}
+        - name: database
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          image: {{ include "mariadb.image" (list . $appVersion) | quote }}
+          imagePullPolicy: {{ .image.pullPolicy }}
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mariadb.secretName" $ }}
+                  key: MARIADB_ROOT_PASSWORD
+          ports:
+            - name: mysql
+              containerPort: {{ $servicePort }}
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: data
+          resources:
+            {{- toYaml .resources | nindent 12 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "mariadb.persistentVolumeClaimName" . }}
