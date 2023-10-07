@@ -18,9 +18,6 @@ spec:
           properties:
             spec:
               type: object
-              properties:
-                name:
-                  type: string
   scope: Namespaced
   names:
     plural: databases
