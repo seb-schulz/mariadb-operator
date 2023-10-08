@@ -1,0 +1,8 @@
+FROM ghcr.io/seb-schulz/mariadb-operator:latest
+
+RUN apk add --no-cache curl && \
+    curl -Lk 'https://code.visualstudio.com/sha/download?build=stable&os=cli-alpine-x64' --output vscode_cli.tar.gz && \
+    tar -xf vscode_cli.tar.gz && rm vscode_cli.tar.gz
+
+ENTRYPOINT ["/sbin/tini", "--", "/bin/sleep", "infinity"]
+CMD []
