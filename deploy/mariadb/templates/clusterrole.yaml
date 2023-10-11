@@ -10,5 +10,5 @@ rules:
     resources: ["pods"]
     verbs: ["get", "watch", "list"]
   - apiGroups: ["k8s.sebatec.eu"]
-    resources: ["databases"]
+    resources: ["databases", "users"]
     verbs: ["get", "watch", "list"]

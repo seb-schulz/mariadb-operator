@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import mysql.connector
-import json
 import sys
 import os
+import utils
 
 CONFIG = {
     'configVersion':
@@ -15,11 +15,6 @@ CONFIG = {
         'jqFilter': ".metadata.name",
     }],
 }
-
-
-def _read_json():
-    with open(os.environ['BINDING_CONTEXT_PATH']) as fp:
-        return json.load(fp)
 
 
 def create_database(cur, db_name=None):
@@ -47,14 +42,8 @@ def delete_database(cur, db_name=None):
 
 
 def main():
-    conn = mysql.connector.connect(
-        user='root',
-        password=os.environ['MARIADB_ROOT_PASSWORD'],
-        host='127.0.0.1',
-    )
-
-    with conn.cursor() as cur:
-        for row in _read_json():
+    with utils.db_cursor() as cur:
+        for row in utils.read_binding_context():
             type_ = row.get('type', None)
             watch_ev = row.get('watchEvent', None)
 
@@ -66,11 +55,6 @@ def main():
             elif type_ == 'Event' and watch_ev == 'Deleted':
                 delete_database(cur, row.get('filterResult', None))
 
-    conn.close()
-
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "--config":
-        print(json.dumps(CONFIG))
-    else:
-        main()
+    utils.main_runner(CONFIG, main)
