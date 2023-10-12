@@ -54,8 +54,36 @@ def set_password(cur, name=None, passwd=None):
         print("Failed creating database: {}".format(err))
 
 
+def revoke_all_permission(cur, user=None):
+    if user is None:
+        return
+
+    try:
+        sql = f"REVOKE IF EXISTS ALL PRIVILEGES, GRANT OPTION FROM '{user}'@'%'; FLUSH PRIVILEGES;"
+        cur.execute(sql, multi=True)
+        print(f'Database permission for {user} revoked')
+    except mysql.connector.Error as err:
+        print("Failed creating database: {}".format(err))
+
+
+def grant_database_permission(cur, user=None, db=None):
+    if user is None or db is None:
+        return
+
+    try:
+        sql = f"GRANT ALL PRIVILEGES ON `{db}`.* TO '{user}'@'%'; FLUSH PRIVILEGES;"
+        cur.execute(sql, multi=True)
+        print(f'Database permission on {db} for {user} given')
+    except mysql.connector.Error as err:
+        print("Failed creating database: {}".format(err))
+
+
 def get_user(obj):
     return obj.get('metadata', {}).get('name', None)
+
+
+def get_db(obj):
+    return obj.get('spec', {}).get('database', None)
 
 
 def get_passwd(obj):
@@ -95,6 +123,7 @@ def handle_sync(cur, objects):
     for item in objects:
         obj = item.get('object', {})
         create_user(cur, get_user(obj), get_passwd(obj))
+        grant_database_permission(cur, get_user(obj), get_db(obj))
 
 
 def handle_event(cur, watch_ev, obj):
@@ -108,8 +137,15 @@ def handle_event(cur, watch_ev, obj):
         delete_user(cur, get_user(old_obj))
     elif watch_ev == 'Added':
         create_user(cur, get_user(obj), get_passwd(obj))
+        grant_database_permission(cur, get_user(obj), get_db(obj))
     elif watch_ev == 'Modified':
         set_password(cur, get_user(obj), get_passwd(obj))
+
+        db, user = get_db(obj), get_user(obj)
+        if db is None:
+            revoke_all_permission(cur, user)
+        else:
+            grant_database_permission(cur, user, db)
     else:
         print(f'Cannot handle watchEvent {watch_ev!r}')
 
