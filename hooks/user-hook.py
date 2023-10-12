@@ -42,11 +42,20 @@ def create_user(cur, name=None, passwd=None):
         print("Failed creating database: {}".format(err))
 
 
+def set_password(cur, name=None, passwd=None):
+    if name is None:
+        return
+
+    try:
+        sql = f"SET PASSWORD FOR '{name}'@'%' = PASSWORD('{passwd}');"
+        cur.execute(sql)
+        print(f'{name} password was modified')
+    except mysql.connector.Error as err:
+        print("Failed creating database: {}".format(err))
+
+
 def get_user(obj):
-    pref = obj.get('metadata', {}).get('name', None)
-    counter = obj.get('data', {}).get('derivedPassword',
-                                      {}).get('siteCounter', 1)
-    return f'{pref}{counter}'
+    return obj.get('metadata', {}).get('name', None)
 
 
 def get_passwd(obj):
@@ -87,8 +96,6 @@ def handle_sync(cur, objects):
         obj = item.get('object', {})
         create_user(cur, get_user(obj), get_passwd(obj))
 
-        print(get_passwd(obj))
-
 
 def handle_event(cur, watch_ev, obj):
     if watch_ev == 'Deleted':
@@ -101,6 +108,8 @@ def handle_event(cur, watch_ev, obj):
         delete_user(cur, get_user(old_obj))
     elif watch_ev == 'Added':
         create_user(cur, get_user(obj), get_passwd(obj))
+    elif watch_ev == 'Modified':
+        set_password(cur, get_user(obj), get_passwd(obj))
     else:
         print(f'Cannot handle watchEvent {watch_ev!r}')
 
@@ -114,8 +123,6 @@ def main():
             elif type_ == 'Event':
                 handle_event(cur, row.get('watchEvent', None),
                              row.get('object', {}))
-
-            # CREATE USER IF NOT EXISTS foo2@% IDENTIFIED BY 'password';
 
 
 if __name__ == "__main__":
