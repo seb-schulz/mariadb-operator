@@ -6,6 +6,7 @@ import os
 import hmac
 import mysql.connector
 import json
+from kubernetes import client, config
 
 CONFIG = {
     'configVersion':
@@ -92,7 +93,7 @@ def get_passwd(obj):
     user = get_user(obj)
     site_name = obj.get('data', {}).get('derivedPassword', {}).get(
         'siteName',
-        obj.get('metadata', {}).get('namespace', ''),
+        obj.get('metadata', {}).get('namespace', 'default'),
     )
     site_counter = obj.get('data', {}).get('derivedPassword', {}).get(
         'siteCounter',
@@ -119,11 +120,50 @@ def get_passwd(obj):
     ).hexdigest()
 
 
+def create_or_replace_config_map(name, namespace, user):
+    cmap = client.V1ConfigMap()
+    cmap.metadata = client.V1ObjectMeta(name=name)
+    cmap.data = {}
+    cmap.data['MARIADB_SERVICE_PORT'] = os.environ['MARIADB_SERVICE_PORT']
+    cmap.data['MARIADB_SERVICE_DOMAIN'] = os.environ['MARIADB_SERVICE_DOMAIN']
+    cmap.data['MARIADB_USER'] = user
+
+    api_instance = client.CoreV1Api()
+    try:
+        api_instance.replace_namespaced_config_map(name=name,
+                                                   namespace="default",
+                                                   body=cmap)
+    except client.exceptions.ApiException as e:
+        if e.status == 404:
+            api_instance.create_namespaced_config_map(namespace="default",
+                                                      body=cmap)
+        else:
+            print(f"failed to create config: {e!r}")
+
+
+def delete_config_map(name, namespace):
+    api_instance = client.CoreV1Api()
+    try:
+        api_instance.delete_namespaced_config_map(name, namespace)
+    except client.exceptions.ApiException as e:
+        if e.status != 404:
+            print(f"failed to create config: {e!r}")
+
+
 def handle_sync(cur, objects):
     for item in objects:
         obj = item.get('object', {})
         create_user(cur, get_user(obj), get_passwd(obj))
-        grant_database_permission(cur, get_user(obj), get_db(obj))
+        db = get_db(obj)
+        if db is not None:
+            grant_database_permission(cur, get_user(obj), get_db(obj))
+            for cm in obj.get('spec', {}).get('configMaps'):
+                create_or_replace_config_map(
+                    cm.get('name'),
+                    cm.get(
+                        'namespace',
+                        obj.get('metadata', {}).get('namespace', 'default'),
+                    ), get_user(obj))
 
 
 def handle_event(cur, watch_ev, obj):
@@ -135,9 +175,26 @@ def handle_event(cur, watch_ev, obj):
             ).get('kubectl.kubernetes.io/last-applied-configuration', ""))
 
         delete_user(cur, get_user(old_obj))
+        for cm in old_obj.get('spec', {}).get('configMaps', []):
+            delete_config_map(
+                cm.get('name'),
+                cm.get(
+                    'namespace',
+                    obj.get('metadata', {}).get('namespace', 'default'),
+                ),
+            )
     elif watch_ev == 'Added':
         create_user(cur, get_user(obj), get_passwd(obj))
         grant_database_permission(cur, get_user(obj), get_db(obj))
+        for cm in obj.get('spec', {}).get('configMaps', []):
+            create_or_replace_config_map(
+                cm.get('name'),
+                cm.get(
+                    'namespace',
+                    obj.get('metadata', {}).get('namespace', 'default'),
+                ),
+                get_user(obj),
+            )
     elif watch_ev == 'Modified':
         set_password(cur, get_user(obj), get_passwd(obj))
 
@@ -146,11 +203,22 @@ def handle_event(cur, watch_ev, obj):
             revoke_all_permission(cur, user)
         else:
             grant_database_permission(cur, user, db)
+
+        for cm in obj.get('spec', {}).get('configMaps', []):
+            create_or_replace_config_map(
+                cm.get('name'),
+                cm.get(
+                    'namespace',
+                    obj.get('metadata', {}).get('namespace', 'default'),
+                ),
+                get_user(obj),
+            )
     else:
         print(f'Cannot handle watchEvent {watch_ev!r}')
 
 
 def main():
+    config.load_incluster_config()
     with utils.db_cursor() as cur:
         for row in utils.read_binding_context():
             type_ = row.get('type', None)

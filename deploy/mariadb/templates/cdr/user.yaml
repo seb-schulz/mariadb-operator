@@ -27,6 +27,16 @@ spec:
                     siteCounter:
                       type: number
                       minimum: 1
+                configMaps:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    required: ["name"]
   scope: Namespaced
   names:
     plural: users

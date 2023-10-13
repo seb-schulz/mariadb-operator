@@ -65,14 +65,14 @@ Create the name of the service account to use
 Create the name of the cluster role to use
 */}}
 {{- define "mariadb.clusterRoleName" -}}
-{{- default (include "mariadb.fullname" .) .Values.clusterRole.name }}
+{{- default (include "mariadb.fullname" .) .Values.clusterRoleName }}
 {{- end }}
 
 {{/*
 Create the name of the cluster role bind to use
 */}}
-{{- define "mariadb.ClusterRoleBindingName" -}}
-{{- default (include "mariadb.fullname" .) .Values.ClusterRoleBindingName }}
+{{- define "mariadb.clusterRoleBindingName" -}}
+{{- default (include "mariadb.fullname" .) .Values.clusterRoleBindingName }}
 {{- end }}
 
 {{/*
@@ -110,4 +110,11 @@ Create/generate the password
 {{- $passwd := last . -}}
 {{- $len := default 32 $cur.Values.secret.randPassworkdLength|int -}}
 {{- default $passwd (randAlphaNum $len) | b64enc | quote }}
+{{- end }}
+
+{{/*
+Create hostname of mariadb service
+*/}}
+{{- define "mariadb.serviceDomain" -}}
+{{ include "mariadb.fullname" . }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
 {{- end }}

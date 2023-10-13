@@ -34,6 +34,9 @@ spec:
             {{- toYaml .securityContext | nindent 12 }}
           image: {{ include "mariadb.image" (list . $appVersion) | quote }}
           imagePullPolicy: {{ .image.pullPolicy }}
+          env:
+            name: MARIADB_SERVICE_DOMAIN
+            value: {{ include "mariadb.serviceDomain" $ }}
           envFrom:
             - secretRef:
                 name: {{ include "mariadb.secretName" $ }}

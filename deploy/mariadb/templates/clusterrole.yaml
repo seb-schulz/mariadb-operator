@@ -7,8 +7,8 @@ metadata:
     {{- include "mariadb.labels" . | nindent 4 }}
 rules:
   - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "watch", "list"]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["k8s.sebatec.eu"]
     resources: ["databases", "users"]
     verbs: ["get", "watch", "list"]

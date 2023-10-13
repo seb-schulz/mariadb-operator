@@ -68,8 +68,8 @@ tolerations: []
 
 affinity: {}
 
-clusterRole: {}
-ClusterRoleBindingName: ""
+clusterRoleName: ""
+clusterRoleBindingName: ""
 
 secret:
   name: ""
@@ -87,3 +87,4 @@ persistentVolumeClaim:
       storage: "10Gi"
 
 persistentVolumeName: ""
+clusterDomain: "cluster.local"
