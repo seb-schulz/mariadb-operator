@@ -91,6 +91,11 @@
             mode: "u=rw,g=,o="
           vars:
             k0s_controller_kubeconfig_content: "{{ k0s_controller_kubeconfig.content | b64decode | from_yaml }}"
+        - name: "Ensure .kube direcotry"
+          ansible.builtin.file:
+            path: /home/vagrant/.kube
+            state: directory
+            mode: '0755'
         - name: "Store .kube/config file"
           ansible.builtin.copy:
             dest: /home/vagrant/.kube/config
