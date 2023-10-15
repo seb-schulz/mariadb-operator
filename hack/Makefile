@@ -15,4 +15,4 @@ rsync-pull:
 
 .PHONY: open-vscode
 open-vscode:
-	code --disable-extension=ms-vscode-remote.remote-containers --folder-uri=vscode-remote://ssh-remote+mariadb-operator//workspace/mariadb-operator
+	bash -c 'cd .. && code --disable-extension=ms-vscode-remote.remote-containers --folder-uri=vscode-remote://ssh-remote+mariadb-operator//workspace/mariadb-operator'
