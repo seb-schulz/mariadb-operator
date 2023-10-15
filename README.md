@@ -29,10 +29,11 @@ Either run vagrant `ssh -- make -C /vagrant build test-latest` to get a containe
 
 ## Working within the dev container
 
-* Build dev container by running `vagrant ssh -- make -C /vagrant build build-dev test-dev`.
-* Access the the operator container with `kubectl exec -ti deployments/mariadb -- bash`
-* Within the container, establish a tunnel with `/code tunnel --name mariadb &` and follow the introduction.
-* Run operator with `/shell-operator 2>&1 | jq -r .msg`
+* Build dev container by running `make -C hack build deploy`.
+* Insert on top of `~/.ssh/config` the following line `Include path-to-your-repo/hack/ssh_config`.
+* Sync with rsync `make -C hack rsync-push` or `make -C hack rsync-pull`.
+* Open vs code via ssh `make -C hack open-vscode`
+* Run operator manually `kubectl exec -ti deployments/mariadb -- bash -c '/shell-operator 2>&1 | jq -r .msg'`
 
 ## Helper commands to troubleshoot issues
 

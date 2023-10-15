@@ -1,0 +1,9 @@
+Host mariadb-operator
+  HostName localhost
+  UserKnownHostsFile /dev/null
+  StrictHostKeyChecking no
+  User root
+  IdentitiesOnly yes
+  IdentityFile .vagrant/machines/default/libvirt/private_key
+  Port 22222
+  ProxyCommand ./hack/proxy.sh
