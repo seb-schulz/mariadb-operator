@@ -42,6 +42,7 @@
           - make
           - helm
           - kubectl
+          - python3-kubernetes
     - name: Download k0s installer
       get_url:
         url: https://get.k0s.sh
@@ -101,3 +102,57 @@
             dest: /home/vagrant/.kube/config
             content: "{{ k0s_controller_kubeconfig.content | b64decode | from_yaml }}"
             mode: "u=rw,g=,o="
+        - name: Provide local storage class
+          kubernetes.core.k8s:
+            state: present
+            definition:
+              apiVersion: storage.k8s.io/v1
+              kind: StorageClass
+              metadata:
+                name: local-storage
+              provisioner: kubernetes.io/no-provisioner
+              volumeBindingMode: WaitForFirstConsumer
+        - name: Provide persistent volume
+          kubernetes.core.k8s:
+            state: present
+            definition:
+              apiVersion: v1
+              kind: PersistentVolume
+              metadata:
+                name: src
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                capacity:
+                  storage: 10Gi
+                local:
+                  path: /vagrant
+                nodeAffinity:
+                  required:
+                    nodeSelectorTerms:
+                    - matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values:
+                        - "{{ ansible_hostname }}"
+                persistentVolumeReclaimPolicy: Retain
+                storageClassName: local-storage
+                volumeMode: Filesystem
+        - name: Provide persistent volume claim
+          kubernetes.core.k8s:
+            state: present
+            definition:
+              apiVersion: v1
+              kind: PersistentVolumeClaim
+              metadata:
+                name: src
+                namespace: default
+              spec:
+                accessModes:
+                - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 10Gi
+                storageClassName: local-storage
+                volumeMode: Filesystem
+                volumeName: src

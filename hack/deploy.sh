@@ -50,3 +50,5 @@ subjects:
   name: mariadb-operator
   namespace: default
 EOL
+
+kubectl --kubeconfig=kubeconf.conf patch deployment mariadb -p '{"spec":{"template":{"spec":{"containers":[{"name":"operator","volumeMounts":[{"mountPath":"/workspace/mariadb-operator","name":"src"}]}],"volumes":[{"name":"src","persistentVolumeClaim":{"claimName":"src"}}]}}}}'
