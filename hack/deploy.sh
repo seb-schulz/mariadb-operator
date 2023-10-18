@@ -22,3 +22,31 @@ rm /tmp/image.tar
 helm uninstall mariadb deploy/mariadb || true
 sleep 2
 helm upgrade -i mariadb deploy/mariadb --set operator.imageOverride=${k8s_image} --set operator.image.pullPolicy=Never
+
+kubectl --kubeconfig=kubeconf.conf apply -f- <<-EOL
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mariadb-testenv
+  namespace: default
+rules:
+  - apiGroups: ["k8s.sebatec.eu"]
+    resources: ["databases", "users"]
+    verbs: ["create", "delete"]
+EOL
+
+kubectl --kubeconfig=kubeconf.conf apply -f- <<-EOL
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: mariadb-testenv
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mariadb-testenv
+subjects:
+- kind: ServiceAccount
+  name: mariadb-operator
+  namespace: default
+EOL

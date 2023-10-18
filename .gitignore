@@ -1,2 +1,3 @@
 /.vagrant/
 kubeconf.conf
+__pycache__/
