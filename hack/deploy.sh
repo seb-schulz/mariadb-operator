@@ -33,6 +33,9 @@ rules:
   - apiGroups: ["k8s.sebatec.eu"]
     resources: ["databases", "users"]
     verbs: ["create", "delete"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["create", "delete"]
 EOL
 
 kubectl --kubeconfig=kubeconf.conf apply -f- <<-EOL

@@ -131,11 +131,11 @@ def create_or_replace_config_map(name, namespace, user):
     api_instance = client.CoreV1Api()
     try:
         api_instance.replace_namespaced_config_map(name=name,
-                                                   namespace="default",
+                                                   namespace=namespace,
                                                    body=cmap)
     except client.exceptions.ApiException as e:
         if e.status == 404:
-            api_instance.create_namespaced_config_map(namespace="default",
+            api_instance.create_namespaced_config_map(namespace=namespace,
                                                       body=cmap)
         else:
             print(f"failed to create config: {e!r}")
