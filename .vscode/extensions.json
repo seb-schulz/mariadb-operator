@@ -3,6 +3,7 @@
         "ms-python.isort",
         "ms-python.python",
         "ms-python.vscode-pylance",
-        "jankaritech.gherlint-vscode"
+        "jankaritech.gherlint-vscode",
+        "eeyore.yapf"
     ]
 }

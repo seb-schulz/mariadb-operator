@@ -19,10 +19,12 @@ def _db_cursor():
     finally:
         conn.close()
 
-def before_all(context:Context):
+
+def before_all(context: Context):
     context.db_cursor = _db_cursor
 
-def before_scenario(context:Context, scenario):
+
+def before_scenario(context: Context, scenario):
     context.cleanup_databases = []
     context.cleanup_users = []
     context.cleanup_namespaces = []
@@ -41,7 +43,13 @@ def after_scenario(context, scenario):
             cur.execute(f"DROP USER IF EXISTS '{user}'")
 
     for ns in context.cleanup_namespaces:
-        subprocess.run(['kubectl', 'delete', 'namespace', '--now', '--ignore-not-found', ns])
+        subprocess.run([
+            'kubectl', 'delete', 'namespace', '--now', '--ignore-not-found', ns
+        ])
 
     for config in context.cleanup_k8s_configs:
-        subprocess.run(['kubectl', 'delete', '--now', '--ignore-not-found', '-f', '-'], text=True, input=config, capture_output=True)
+        subprocess.run(
+            ['kubectl', 'delete', '--now', '--ignore-not-found', '-f', '-'],
+            text=True,
+            input=config,
+            capture_output=True)

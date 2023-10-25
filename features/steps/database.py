@@ -15,6 +15,7 @@ def step_impl(context, db):
                 break
             time.sleep(0.25)
 
+
 @then(u'database "{db}" does not exist')
 def step_impl(context, db):
     with context.db_cursor() as cur:
