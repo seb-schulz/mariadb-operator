@@ -39,6 +39,26 @@ def step_impl(context, namespace):
     assert r.returncode == 0, f'failed to create namespace: {r!r}'
 
 
+@then(u'secret "{name}" does exist in namespace "{ns}" with following entries')
+def step_impl(context, name, ns):
+    for i in range(3):
+        time.sleep(i + 1)
+        r = subprocess.run([
+            'kubectl', 'get', 'secret', '-n', ns, name,
+            r"-o=jsonpath='{.data}'"
+        ],
+                           text=True,
+                           capture_output=True)
+        if r.returncode == 0:
+            break
+    assert r.returncode == 0, "secret was not created"
+    assert len(r.stdout) > 2, f'secret has no data: {r!r}'
+    cm = json.loads(r.stdout[1:-1])
+    for row in context.table:
+        k = row['key']
+        assert k in cm.keys(), f"key {k} does not exist in secret"
+
+
 @then(
     u'config map "{name}" does exist in namespace "{ns}" with following entries'
 )

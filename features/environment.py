@@ -3,6 +3,7 @@ import mysql.connector
 import os
 from behave.runner import Context
 import subprocess
+import time
 
 
 @contextmanager
@@ -44,7 +45,8 @@ def after_scenario(context, scenario):
 
     for ns in context.cleanup_namespaces:
         subprocess.run([
-            'kubectl', 'delete', 'namespace', '--now', '--ignore-not-found', ns
+            'kubectl', 'delete', 'namespace', '--now', '--ignore-not-found',
+            '--wait', ns
         ])
 
     for config in context.cleanup_k8s_configs:
@@ -53,3 +55,4 @@ def after_scenario(context, scenario):
             text=True,
             input=config,
             capture_output=True)
+    time.sleep(2)

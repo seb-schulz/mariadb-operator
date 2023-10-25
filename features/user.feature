@@ -46,7 +46,34 @@ Feature: User custom declarative resource
           name: mydb
         """
         Then config map "mycm" does exist in namespace "myapp" with following entries
-            | key | value |
+            | key                       | value                             |
             | MARIADB_SERVICE_DOMAIN    | mariadb.default.svc.cluster.local |
             | MARIADB_SERVICE_PORT      | 3306                              |
             | MARIADB_USER              | hello                             |
+
+
+    Scenario: Secret does exist on configured namespace
+        Given a running shell-operator
+        When namespace "myapp2" exists
+        And following kubernetes configuration is applied
+        """
+        apiVersion: "k8s.sebatec.eu/v1alpha1"
+        kind: Database
+        metadata:
+          name: mydb
+        """
+        And following kubernetes configuration is applied
+        """
+        apiVersion: "k8s.sebatec.eu/v1alpha1"
+        kind: User
+        metadata:
+          name: hello
+        spec:
+          database: mydb
+          secrets:
+            - namespace: myapp2
+              name: mysecret
+        """
+        Then secret "mysecret" does exist in namespace "myapp2" with following entries
+            | key               |
+            | MARIADB_PASSWORD  |

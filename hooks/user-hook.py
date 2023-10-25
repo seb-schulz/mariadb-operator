@@ -7,6 +7,7 @@ import hmac
 import mysql.connector
 import json
 from kubernetes import client, config
+import base64
 
 CONFIG = {
     'configVersion':
@@ -141,6 +142,30 @@ def create_or_replace_config_map(name, namespace, user):
             print(f"failed to create config: {e!r}")
 
 
+def create_or_replace_secret(name, namespace, passwd):
+    secret = client.V1Secret()
+    secret.metadata = client.V1ObjectMeta(name=name)
+    secret.data = {}
+    secret.data['MARIADB_PASSWORD'] = base64.b64encode(
+        passwd.encode('utf-8')).decode('utf-8')
+
+    api_instance = client.CoreV1Api()
+    try:
+        api_instance.replace_namespaced_secret(
+            name=name,
+            namespace=namespace,
+            body=secret,
+        )
+    except client.exceptions.ApiException as e:
+        if e.status == 404:
+            api_instance.create_namespaced_secret(
+                namespace=namespace,
+                body=secret,
+            )
+        else:
+            print(f"failed to create secret: {e!r}")
+
+
 def delete_config_map(name, namespace):
     api_instance = client.CoreV1Api()
     try:
@@ -163,7 +188,18 @@ def handle_sync(cur, objects):
                     cm.get(
                         'namespace',
                         obj.get('metadata', {}).get('namespace', 'default'),
-                    ), get_user(obj))
+                    ),
+                    get_user(obj),
+                )
+            for secret in obj.get('spec', {}).get('secrets'):
+                create_or_replace_secret(
+                    secret.get('name'),
+                    secret.get(
+                        'namespace',
+                        obj.get('metadata', {}).get('namespace', 'default'),
+                    ),
+                    get_passwd(obj),
+                )
 
 
 def handle_event(cur, watch_ev, obj):
@@ -195,6 +231,15 @@ def handle_event(cur, watch_ev, obj):
                 ),
                 get_user(obj),
             )
+        for secret in obj.get('spec', {}).get('secrets'):
+            create_or_replace_secret(
+                secret.get('name'),
+                secret.get(
+                    'namespace',
+                    obj.get('metadata', {}).get('namespace', 'default'),
+                ),
+                get_passwd(obj),
+            )
     elif watch_ev == 'Modified':
         set_password(cur, get_user(obj), get_passwd(obj))
 
@@ -212,6 +257,15 @@ def handle_event(cur, watch_ev, obj):
                     obj.get('metadata', {}).get('namespace', 'default'),
                 ),
                 get_user(obj),
+            )
+        for secret in obj.get('spec', {}).get('secrets'):
+            create_or_replace_secret(
+                secret.get('name'),
+                secret.get(
+                    'namespace',
+                    obj.get('metadata', {}).get('namespace', 'default'),
+                ),
+                get_passwd(obj),
             )
     else:
         print(f'Cannot handle watchEvent {watch_ev!r}')

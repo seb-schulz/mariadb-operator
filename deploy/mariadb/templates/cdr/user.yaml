@@ -37,6 +37,16 @@ spec:
                       namespace:
                         type: string
                     required: ["name"]
+                secrets:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    required: ["name"]
   scope: Namespaced
   names:
     plural: users
