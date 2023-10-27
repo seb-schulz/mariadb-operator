@@ -1,6 +1,4 @@
 name: Release operator
-permissions:
-  packages: write
 on:
   push:
     branches: ['github-actions']
@@ -9,6 +7,8 @@ env:
 jobs:
   build-and-push-container:
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
     steps:
       - uses: actions/checkout@v4
       - name: Version of buildah
@@ -23,6 +23,8 @@ jobs:
       - run: make push
   build-helm-chart:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
