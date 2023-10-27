@@ -1,11 +1,12 @@
 name: GitHub Actions Demo
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 permissions:
-  contents: read
   packages: write
 on:
   push:
     branches: ['github-actions']
+env:
+  VERSION: "0.1.0"
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
