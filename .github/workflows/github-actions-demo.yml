@@ -6,8 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get -y install buildah
+      - name: Version of buildah
+        run: buildah version
       - run: make build
-      - name: List files in the repository
-        run: |
-          ls ${{ github.workspace }}
+      - run: make push
