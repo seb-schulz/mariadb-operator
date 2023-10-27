@@ -1,12 +1,23 @@
 name: GitHub Actions Demo
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
-on: [push]
+permissions:
+  contents: read
+  packages: write
+on:
+  push:
+    branches: ['github-actions']
 jobs:
-  Explore-GitHub-Actions:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Version of buildah
         run: buildah version
       - run: make build
+      - name: Log in to the GitHub Container registry
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ghcr.io/seb-schulz
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - run: make push
