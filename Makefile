@@ -8,6 +8,10 @@ BUILDAH_ARGS ?= --squash
 build:
 	$(BUILDAH_BIN) bud $(BUILDAH_ARGS) -t $(IMAGE):$(VERSION)
 
+.PHONY: push
+push:
+	$(BUILDAH_BIN) push $(IMAGE):$(VERSION)
+
 .PHONY: test-latest
 test-latest:
 	./scripts/test-apply.sh $(IMAGE) $(VERSION)

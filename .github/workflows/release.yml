@@ -1,0 +1,41 @@
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+jobs:
+  build-and-push-container:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set env
+        run: echo "VERSION=${GITHUB_REF#refs/*/v}" >> $GITHUB_ENV
+      - name: Version of buildah
+        run: buildah version
+      - run: make build
+      - name: Log in to the GitHub Container registry
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ghcr.io/seb-schulz
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: make push
+  build-helm-chart:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com"
+      - name: Helm Chart Releaser
+        uses: helm/chart-releaser-action@v1.5.0
+        with:
+          charts_dir: deploy
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
