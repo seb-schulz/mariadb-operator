@@ -13,8 +13,8 @@ the latest versions of the packages.  You can then run `helm search repo
 
 To install the <chart-name> chart:
 
-    helm install mariadb-operator mariadb-operator/mariadb-operator
+    helm install mariadb mariadb-operator/mariadb
 
 To uninstall the chart:
 
-    helm delete mariadb-operator
+    helm delete mariadb
