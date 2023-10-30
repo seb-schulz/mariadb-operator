@@ -9,7 +9,7 @@ Goal of this operator is easily setup databases and users by using declaritive y
 
 # How to contribute
 
-The development environment installs [k0s](https://k0sproject.io/) on (vagrant)[https://www.vagrantup.com/] and exports a kubeconfig file so that access to the kubernetes cluster from host machine is possible.
+The development environment installs [k0s](https://k0sproject.io/) on [vagrant](https://www.vagrantup.com/) and exports a kubeconfig file so that access to the kubernetes cluster from host machine is possible.
 
 Please check the `Makefile` for further details.
 
