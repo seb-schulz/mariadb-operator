@@ -1,3 +1,5 @@
+**This repository has been archived and is no longer maintained. The code remains available for reference purposes, but no further updates or support will be provided.**
+
 # MariaDB operator
 
 This operator is based on [shell-operator](https://github.com/flant/shell-operator).
